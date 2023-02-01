@@ -1,0 +1,26 @@
+<script type="text/javascript" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<label for="selector-{{ .Get 0 }}-{{ .Get 1 }}">{{ .Get 2 }}</label>
+<select id="selector-{{ .Get 0 }}-{{ .Get 1 }}"></select>
+<script>
+
+    variable = "{{ .Get 0 }}"
+    data = mainData[variable]
+
+    data.then(function(response) {
+        response.columns.forEach(function(item){
+            if (!isNaN(response[0][item])){
+                let newoption = $('<option></option>').attr("value", item).text(item)
+                $("#selector-{{ .Get 0 }}-{{ .Get 1 }}").append(newoption)
+            }
+        })
+
+        selname = "{{ .Get 1 }}"
+
+        $("#selector-{{ .Get 0 }}-{{ .Get 1 }}").change(function() {
+            mainData[selname] = $("#selector-{{ .Get 0 }}-{{ .Get 1 }}").val()
+        })
+        $("#selector-{{ .Get 0 }}-{{ .Get 1 }}").trigger("change")
+    })
+
+
+</script>

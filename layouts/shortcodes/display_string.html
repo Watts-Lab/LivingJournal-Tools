@@ -1,0 +1,15 @@
+<script type="text/javascript" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<p class="container text" id="protected_text"></p>
+<script type="text/javascript">
+  if (typeof mainData === 'undefined'){
+    console.log("Could not find the mainData object, are you sure you ran a data loading shortcode?")
+  }
+  idstring = "{{ .Get 0 }}"
+  $("#" + idstring).on('change keyup paste', function() {
+      $("#protected_text").text(mainData["{{ .Get 0 }}"])
+  })
+  $( document ).ready(function () {
+      $("#protected_text").text(mainData["{{ .Get 0 }}"])
+  })
+
+</script>

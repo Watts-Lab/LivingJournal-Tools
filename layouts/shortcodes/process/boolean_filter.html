@@ -1,0 +1,16 @@
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script type="text/javascript">
+    // For this prototype, the language is pretty strict,
+    // we can look into importing safe lexers and yaccs and things later
+    // TODO: Revisit this approach to having custom middle processing.
+    // TODO: Doesn't work yet, maybe looking into using the myna CFG parser.
+    variable = "{{ .Get 0 }}";
+    instruction = "{{ .Get 1 }}"
+    [lhs, infix, rhs] = instruction.split(/(\s+)/)
+    out_var = "{{ .Get 2 }}"
+    data = mainData[variable];
+    data.then((response) => {
+
+        console.log(d3.extent(response, (d) => +d[lhs]));
+    })
+</script>

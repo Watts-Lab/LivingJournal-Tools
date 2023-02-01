@@ -1,0 +1,15 @@
+<script src="https://d3js.org/d3.v7.min.js"></script>
+
+<script>
+    // In order to keep module level variables from colliding at the document level,
+    // we HAVE to declare them implicitly. Explicit declarations go up to the document,
+    // implicit ones stay in the script.
+    link = "{{ .Get 1 }}";
+    // Im thinking the variable should ALWAYS be 0?
+    variable = "{{ .Get 0 }}";
+    if (typeof mainData === 'undefined') {
+        mainData = {};
+    }
+    mainData[variable] = d3.csv(link);
+
+</script>

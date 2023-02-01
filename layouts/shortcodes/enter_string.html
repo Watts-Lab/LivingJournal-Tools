@@ -1,0 +1,18 @@
+<script type="text/javascript" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<label for="{{ .Get 0}}"></label>
+<input name="entrybox" id="{{ .Get 0}}" type="text">
+<script type="text/javascript">
+    if (typeof mainData === 'undefined'){
+        mainData = {};
+    }
+    idstring = "{{ .Get 0 }}"
+    $("#" + idstring).on('change keyup paste', function() {
+        mainData[idstring] = $( this ).val();
+    })
+    // The loading function needs to be bound to the document load as well. In the future it will be better to define
+    // the function in a place where it is easy to reuse in cases like this.
+    $( document ).ready(function (){
+        mainData[idstring] = $( "#" + idstring ).val();
+    })
+
+</script>
