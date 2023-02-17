@@ -118,7 +118,7 @@
             svg.append("g")
                 .call(d3.axisLeft(y));
 
-            fill_color = getComputedStyle(document.querySelector(".chart")).fill
+            let fill_color = getComputedStyle(document.querySelector(".chart")).fill
 
             svg.selectAll("rect")
                 .data(bins)

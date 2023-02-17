@@ -1,0 +1,32 @@
+.vis-flex {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+}
+
+.vis-flex .chart-container {
+    flex: 1 1 30%;
+    height: 100%;
+    width: 100%;
+}
+
+.chart-container {
+    width: 100%;
+    aspect-ratio: 1.61;
+    margin: auto;
+}
+
+.vis-flex .chart {
+    height: 100%;
+    width: 100%;
+    display: inline-block;
+}
+
+
+.chart {
+    height: 100%;
+    width: 100%;
+    margin: auto;
+    display: inline-block;
+}
+

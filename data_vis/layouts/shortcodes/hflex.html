@@ -1,0 +1,7 @@
+{{ partial "resource.html" (dict "context" . "type" "css" "filename" "css/data-vis.css") }}
+{{ partial "assign_id.html" . }}
+
+<div class="vis-flex" id='{{ .Scratch.Get "id" }}'>
+    {{ .Inner }}
+</div>
+
