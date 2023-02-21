@@ -1,0 +1,10 @@
+<script>
+{
+    let link = "{{ .Get 1 }}";
+    let variable = "{{ .Get 0 }}";
+    if (typeof mainData === 'undefined') {
+        mainData = {};
+    }
+    mainData[variable] = d3.csv(link);
+}
+</script>
