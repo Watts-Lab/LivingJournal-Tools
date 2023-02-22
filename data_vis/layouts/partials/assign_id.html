@@ -1,4 +1,3 @@
-
     {{ .Scratch.Set "id" (printf "%s-%s" .Name (string .Ordinal)) }} 
     {{ .Scratch.Set "curr_parent" .Parent }}
     {{ range seq 1024 }}
@@ -6,6 +5,9 @@
     {{ if ($.Scratch.Get "curr_parent") }}
     {{ $parent_id := printf "%s-%s" ($.Scratch.Get "curr_parent").Name (string ($.Scratch.Get "curr_parent").Ordinal) }}
     {{ $.Scratch.Set "id" (printf "%s-%s" $parent_id ($.Scratch.Get "id")) }}
+    {{ if eq ($.Scratch.Get "curr_parent").Name "chart" }}
+        {{ $.Scratch.Set "chart_id" $parent_id }}
+    {{ end }}
     {{ $.Scratch.Set "curr_parent" ($.Scratch.Get "curr_parent").Parent }}
     {{ else }}
     {{ break }}

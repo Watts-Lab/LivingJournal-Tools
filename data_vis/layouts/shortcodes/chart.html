@@ -1,0 +1,37 @@
+{{ partial "assign_id.html" . }}
+
+<div class="chart-container">
+    <div class="chart bar-chart figure" id='{{ .Scratch.Get "id" }}'></div>
+</div>
+<script type="text/javascript" >
+        // Check for a chartspace, and if it doesn't exist, then make it
+        if (typeof chartSpace === 'undefined') {
+            var chartSpace = {}; // This one should be var because we want it to be global
+        }
+        // Create a namespace to adjoin to chartSpace
+        chartSpace['{{ .Scratch.Get "id" }}'] = {};
+        // So I don't have to type out the id every time:
+        {
+        let localChart = chartSpace['{{ .Scratch.Get "id" }}']
+        localChart.tarchart = $('#{{ .Scratch.Get "id" }}')
+        localChart.fill_color = getComputedStyle(document.documentElement).getPropertyValue('--bar-chart-fill');
+        localChart.axis_color = getComputedStyle(document.documentElement).getPropertyValue('--bar-chart-axis');
+        localChart.bar_padding = getComputedStyle(document.documentElement).getPropertyValue('--bar-chart-padding');
+        localChart.margin = {top: 10, right: 30, bottom: 30, left: 40},
+            localChart.width = localChart.tarchart.width() - localChart.margin.left - localChart.margin.right,
+            localChart.height = localChart.tarchart.height() - localChart.margin.top - localChart.margin.bottom;
+        localChart.rheight = localChart.height + localChart.margin.top + localChart.margin.bottom;
+        localChart.rwidth = localChart.width + localChart.margin.left + localChart.margin.right;
+
+        localChart.svg = d3.select('#{{ .Scratch.Get "id" }}')
+            .append("svg")
+            .attr("viewBox", `0 0 ${localChart.rwidth} ${localChart.rheight}`)
+            .append("g")
+            .attr("transform",
+                "translate(" + localChart.margin.left + "," + localChart.margin.top + ")");
+        }
+</script>
+
+{{ .Inner }}
+
+<!--Tbh the inner flag here is just so that we get other environment tricks from hugo. We'll probably have some cleanup tasks to put down here later anyway.-->

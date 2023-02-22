@@ -1,5 +1,9 @@
 {{ partial "assign_id.html" . }}
 
+<div class="chart-container">
+    <div class="chart bar-chart figure" id='{{ .Scratch.Get "id" }}'></div>
+</div>
+
 <script type="text/javascript">
     $(document).ready(function() {
 
@@ -8,14 +12,30 @@
         // this makes it easier to pass a dataset containing only one column
         let column = "{{ if (.Get 1) }}{{ .Get 1 }}{{ else }}{{ .Get 0 }}{{ end }}"
         let tar_ds = mainData[variable]
-        let localChart = chartSpace['{{ .Scratch.Get "chart_id" }}']
 
+        let tarchart = $('#{{ .Scratch.Get "id" }}')
+        let fill_color = getComputedStyle(document.documentElement).getPropertyValue('--bar-chart-fill');
+        let axis_color = getComputedStyle(document.documentElement).getPropertyValue('--bar-chart-axis');
+        let bar_padding = getComputedStyle(document.documentElement).getPropertyValue('--bar-chart-padding');
+        let margin = {top: 10, right: 30, bottom: 30, left: 40},
+            width = tarchart.width() - margin.left - margin.right,
+            height = tarchart.height() - margin.top - margin.bottom;
+        let rheight = height + margin.top + margin.bottom;
+        let rwidth = width + margin.left + margin.right;
+
+        let svg = d3.select('#{{ .Scratch.Get "id" }}')
+            .append("svg")
+            .attr("viewBox", `0 0 ${rwidth} ${rheight}`)
+            .append("g")
+            .attr("transform",
+                "translate(" + margin.left + "," + margin.top + ")");
+      
         tar_ds.then(function (data) {
             // check for weird blank values and set them to NA, since that covers a lot of missing data situations
             data.forEach(d => {if (!d[column]) {d[column] = "NA"}});
             let x = d3.scaleBand()
                     .domain(data.map(d => d[column]))
-                    .range([0, localChart.width])
+                    .range([0, width])
 
             
             // transform our dataframe to a dataframe of counts on the target column
@@ -28,27 +48,27 @@
 
             let y = d3.scaleLinear()
                         .domain([0, d3.max(tarcount, d => d.ct)])
-                        .range([localChart.height, 0])
+                        .range([height, 0])
             // In much of web design, y is measured from the upper left hand corner.
             // This is no exception, but it does make this scale definition seem a little strange, almost backwards
 
-            localChart.svg.append("g")
+            svg.append("g")
                 .call(d3.axisLeft(y))
             
-            localChart.svg.append("g")
-                .attr("transform", "translate(0," + localChart.height + ")")
+            svg.append("g")
+                .attr("transform", "translate(0," + height + ")")
                 .call(d3.axisBottom(x))
             
 
-            localChart.svg.selectAll("rect")
+            svg.selectAll("rect")
                 .data(tarcount)
                 .enter()
                 .append("rect")
-                    .attr("height", d => localChart.height - y(d.ct))
-                    .attr("width", x.bandwidth() - localChart.bar_padding)
+                    .attr("height", d => height - y(d.ct))
+                    .attr("width", x.bandwidth() - bar_padding)
                     .attr("x", d => x(d.key))
                     .attr("y", d => y(d.ct))
-                    .attr("fill", localChart.fill_color)
+                    .attr("fill", fill_color)
             
                 
         })
