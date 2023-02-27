@@ -1,26 +1,52 @@
-<script type="text/javascript" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<label for="selector-{{ .Get 0 }}-{{ .Get 1 }}">{{ .Get 2 }}</label>
-<select id="selector-{{ .Get 0 }}-{{ .Get 1 }}"></select>
+{{ partial "assign_id.html" . }}
+<label for='{{ .Scratch.Get "id" }}'>{{ .Get 2 }}</label>
+<select id='{{ .Scratch.Get "id" }}'></select>
+<!--Setup stuff, assign ids, add things to the dom...-->
 <script>
+    {
+    {{ if (.Get "type") }}
+        type = '{{ .Get "type"}}'
+    {{ end }}
+    // We don't want the selector to include columns that don't make sense in context, so we expose this type parameter for the author to manually choose what kind of data is displayed.
 
-    variable = "{{ .Get 0 }}"
-    data = mainData[variable]
+    let variable = "{{ .Get 0 }}"
+    let data = mainData[variable]
 
     data.then(function(response) {
         response.columns.forEach(function(item){
-            if (!isNaN(response[0][item])){
+            // iterate over columns
+            uniq = [...new Set(response.map(d => d[item]))]
+            uniq = uniq.map(d => {if (!d) {return "NA"} else {return d}});
+            // first, get all the uniq values in the column
+            if (uniq.every(isNaN) && item){
+                // for each of those unique values, try to figure out if its a number, if it isn't, add it to the column selector options. This will work for categorical data, and we can add a branch later for numeric types
                 let newoption = $('<option></option>').attr("value", item).text(item)
-                $("#selector-{{ .Get 0 }}-{{ .Get 1 }}").append(newoption)
+                $('#{{ .Scratch.Get "id"}}').append(newoption)
             }
         })
 
-        selname = "{{ .Get 1 }}"
+        let selname = "{{ .Get 1 }}"
+        mainData["_" + selname] = {}; // initialize a hidden object to store data
+        mainData["_" + selname].children = new Set();
+        // Okay here's the wizardry, we're going to make a proxy.
+            // this will run a function "set" every time someone tries to change a variable value.
+            // the proxy then will send a change signal to every one of its children.
+            // we register children in the chart generating code.
+        mainData[selname] = new Proxy(mainData["_" + selname], {
+            set: function (target, key, value) {
+                target[key] = value;
+                children = target.children
+                children.forEach(child => {
+                    $('#' + child).trigger("change")
+                })
+                return true;
+            }
+        });
 
-        $("#selector-{{ .Get 0 }}-{{ .Get 1 }}").change(function() {
-            mainData[selname] = $("#selector-{{ .Get 0 }}-{{ .Get 1 }}").val()
+        $('#{{ .Scratch.Get "id"}}').change(function() {
+            mainData[selname]['_value'] = $('#{{ .Scratch.Get "id"}}').val()
         })
-        $("#selector-{{ .Get 0 }}-{{ .Get 1 }}").trigger("change")
+        $('#{{ .Scratch.Get "id"}}').trigger("change")
     })
-
-
+}
 </script>

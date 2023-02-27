@@ -1,0 +1,26 @@
+{{ partial "assign_id.html" . }}
+<div id='{{ .Scratch.Get "id" }}' class="focus testbox"></div>
+
+<script>
+    $(document).ready(function() {
+        let in_var = "{{ .Get 0 }}"
+        let this_id = '{{ .Scratch.Get "id" }}'
+        mainData[in_var].children.add(this_id);
+        let target = $('#' + this_id);
+
+        target.change(function() {
+            let data
+            if ("_data" in mainData[in_var]){
+                data = mainData[in_var]._data
+            } else {
+                data = mainData[in_var]
+            }
+            let filt_count = mainData[in_var]._data.then(function (resp) {
+                return resp.length
+            });
+            filt_count.then( d => target.text(d));
+        });
+        target.trigger("change")
+    });
+
+</script>

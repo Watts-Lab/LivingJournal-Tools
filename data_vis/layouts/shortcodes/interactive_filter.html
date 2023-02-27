@@ -1,0 +1,91 @@
+{{ partial "assign_id.html" . }}
+<label for='{{ .Scratch.Get "id" }}'>Filter By: </label>
+<select id='{{ .Scratch.Get "id" }}'></select>
+<!--Setup stuff, assign ids, add things to the dom...-->
+
+<script>
+    {
+    $(document).ready(function() {
+
+    let areSetsEqual = (a, b) => a.size === b.size && [...a].every(value => b.has(value));
+    let out_var = "{{ .Get 0 }}"
+    let in_var = "{{ .Get 1 }}"
+    let column = "{{ .Get 2 }}"
+    mainData["_" + out_var] = {}; // initialize a hidden object to store data
+    mainData["_" + out_var].children = new Set();
+
+    // Okay here's the wizardry, we're going to make a proxy.
+        // this will run a function "set" every time someone tries to change a variable value.
+        // the proxy then will send a change signal to every one of its children.
+        // we register children in the chart generating code.
+    // TODO: I think we need to totally redo this system, the way I'm doing it now it'll get crazy super fast
+        // I think I need an equivalent of a struct
+    mainData[out_var] = new Proxy(mainData["_" + out_var], {
+        set: function (target, key, value) {
+            target[key] = value;
+            children = target.children
+            if (["_data", "_value"].includes(key)){
+                value.then( d => {
+            children.forEach(child => {
+                $('#' + child).trigger("change")
+            })})
+            }
+            return true;
+        }
+    });
+
+    $('#{{ .Scratch.Get "id"}}').change(function() {
+        mainData[out_var]["_selection"] = $('#{{ .Scratch.Get "id" }}').val()
+            let data
+            if (("_" + in_var) in mainData) {
+                data = mainData[in_var]["_data"]
+                mainData[in_var]['children'].add('{{ .Scratch.Get "chart_id" }}')
+            } else {
+                data = mainData[in_var]
+            }
+
+        mainData[out_var]["_data"] =
+            data.then(function(response) {
+                let tar_column
+                if (column in mainData){
+                    // register this selector as a child of that selector
+                    mainData[column]['children'].add('{{ .Scratch.Get "id" }}')
+                    tar_column = mainData[column]['_value']
+                } else {
+                    tar_column = column
+                }
+                // check to see if options have changed
+                let old_options = new Set();
+                $('#{{ .Scratch.Get "id" }} option').each(function() {
+                    old_options.add($(this).val())
+                })
+                // iterate over columns
+                let uniq = new Set(response.map(d => d[tar_column]))
+                    uniq = [ ... uniq ]
+                    uniq = uniq.map(d => {if (!d) {return "NA"} else {return d}});
+                    uniq = new Set(uniq);
+                if (!areSetsEqual(uniq, old_options)) {
+                    uniq = [ ... uniq ]
+                    // first, get all the uniq values in the column
+                    $('#{{ .Scratch.Get "id" }}').empty();
+                    uniq.forEach(function(item) {
+                        let newoption = $('<option></option>').attr("value", item).text(item)
+                        $('#{{ .Scratch.Get "id"}}').append(newoption)
+                    });
+                }
+                if (!mainData[out_var]._selection) {
+                    mainData[out_var]._selection = uniq[0]
+                };
+                return new Promise((resolve, reject) => {
+                    let ret = response.filter(d => d[tar_column] === mainData[out_var]._selection)
+                    let uniq = [...new Set(response.map(d => d[tar_column]))];
+                    resolve(ret)
+                });
+            })
+    });
+
+    $('#{{ .Scratch.Get "id"}}').trigger("change")
+
+    }
+    )}
+</script>

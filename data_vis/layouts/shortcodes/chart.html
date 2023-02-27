@@ -1,6 +1,7 @@
 {{ partial "assign_id.html" . }}
 
 <div class="chart-container">
+    <h3 class="chart-header">{{ .Scratch.Get "title" }}</h3>
     <div class="chart bar-chart figure" id='{{ .Scratch.Get "id" }}'></div>
 </div>
 <script type="text/javascript" >

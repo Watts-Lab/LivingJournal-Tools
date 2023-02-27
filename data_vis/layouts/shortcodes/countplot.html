@@ -2,56 +2,125 @@
 
 <script type="text/javascript">
     $(document).ready(function() {
-
+        
+        let areSetsEqual = (a, b) => a.size === b.size && [...a].every(value => b.has(value));
         let variable = "{{ .Get 0 }}"
         // We want this fallback to the variable name if a column isn't provided,
         // this makes it easier to pass a dataset containing only one column
         let column = "{{ if (.Get 1) }}{{ .Get 1 }}{{ else }}{{ .Get 0 }}{{ end }}"
-        let tar_ds = mainData[variable]
+        let tar_ds
+        if (("_" + variable) in mainData) {
+            tar_ds = mainData[variable]["_data"]
+            mainData[variable]['children'].add('{{ .Scratch.Get "chart_id" }}')
+        } else {
+            tar_ds = mainData[variable]
+        }
+        if ("_" + column in mainData) {
+            // register this plot as a child of that selector
+            mainData[column]['children'].add('{{ .Scratch.Get "chart_id" }}')
+        }
         let localChart = chartSpace['{{ .Scratch.Get "chart_id" }}']
+        let update = function (_) {
+            // We need to redefine the dataset each time, otherwise it stores the value instead of being a pointer
+                // as you might expect in a not-stupid programming language
+            let tar_ds
+            if (("_" + variable) in mainData) {
+                tar_ds = mainData[variable]["_data"]
+                mainData[variable]['children'].add('{{ .Scratch.Get "chart_id" }}')
+            } else {
+                tar_ds = mainData[variable]
+            }
+            tar_ds.then(function (data) {
+                let tar_column
+                if (column in mainData){
+                    // register this selector as a child of that selector
+                    mainData[column]['children'].add('{{ .Scratch.Get "chart_id" }}')
+                    tar_column = mainData[column]['_value']
+                } else {
+                    tar_column = column
+                }
 
-        tar_ds.then(function (data) {
+            // animate the change if it makes sense to
+            if ("x" in localChart) {
+                let olddom = new Set(localChart.x.domain())
+                let newdom = new Set(data.map(d => d[tar_column]))
+                if (areSetsEqual(olddom, newdom)) {
+                    let tarcount = Array.from(d3.group(data, d => d[tar_column]),
+                        ([key, value]) => ({key: key, ct: value.length}));
+                    tarcount.sort((a, b) => a.key.localeCompare(b.key))
+
+                    localChart.y = d3.scaleLinear()
+                                .domain([0, d3.max(tarcount, d => d.ct)])
+                                .range([localChart.height, 0])
+
+                    localChart.domY.transition()
+                        .duration(500)
+                        .call(d3.axisLeft(localChart.y))
+
+                    localChart.svg.selectAll("rect")
+                        .data(tarcount)
+                        .transition()
+                        .duration(500)
+                            .attr("height", d => localChart.height - localChart.y(d.ct))
+                            .attr("width",localChart.x.bandwidth() - localChart.bar_padding)
+                            //.attr("x", d => localChart.x(d.key))
+                            .attr("y", d => localChart.y(d.ct))
+                            .attr("fill", localChart.fill_color)
+
+                    return true;
+
+                } else {
+                    localChart.svg.selectAll("*").remove()
+                }
+            }
+
             // check for weird blank values and set them to NA, since that covers a lot of missing data situations
-            data.forEach(d => {if (!d[column]) {d[column] = "NA"}});
-            let x = d3.scaleBand()
-                    .domain(data.map(d => d[column]))
-                    .range([0, localChart.width])
+            data.forEach(d => {if (!d[tar_column]) {d[tar_column] = "NA"}});
+
 
             
-            // transform our dataframe to a dataframe of counts on the target column
+            // transform our dataframe to a dataframe of counts on the target tar_column
             // Googling this problem gives you, I shit you not, hundreds of bad solutions. 
             // This is, as far as I'm aware, the only way to do this without extra processing, 
             // Since the => denotes an anonymous function, you can get pretty wild with this pattern too
 
-            let tarcount = Array.from(d3.group(data, d => d[column]),
+            let tarcount = Array.from(d3.group(data, d => d[tar_column]),
                 ([key, value]) => ({key: key, ct: value.length}));
 
-            let y = d3.scaleLinear()
+            tarcount.sort((a, b) => a.key.localeCompare(b.key))
+
+            localChart.x = d3.scaleBand()
+                    .domain(tarcount.map(d => d.key))
+                    .range([0, localChart.width])
+
+            localChart.y = d3.scaleLinear()
                         .domain([0, d3.max(tarcount, d => d.ct)])
                         .range([localChart.height, 0])
-            // In much of web design, y is measured from the upper left hand corner.
+            // In much of web design, localChart.y is measured from the upper left hand corner.
             // This is no exception, but it does make this scale definition seem a little strange, almost backwards
 
-            localChart.svg.append("g")
-                .call(d3.axisLeft(y))
+
+            localChart.domY = localChart.svg.append("g")
+                .call(d3.axisLeft(localChart.y))
             
-            localChart.svg.append("g")
+            localChart.domX = localChart.svg.append("g")
                 .attr("transform", "translate(0," + localChart.height + ")")
-                .call(d3.axisBottom(x))
+                .call(d3.axisBottom(localChart.x))
             
 
-            localChart.svg.selectAll("rect")
+            localChart.rects = localChart.svg.selectAll("rect")
                 .data(tarcount)
                 .enter()
                 .append("rect")
-                    .attr("height", d => localChart.height - y(d.ct))
-                    .attr("width", x.bandwidth() - localChart.bar_padding)
-                    .attr("x", d => x(d.key))
-                    .attr("y", d => y(d.ct))
+                    .attr("height", d => localChart.height - localChart.y(d.ct))
+                    .attr("width",localChart.x.bandwidth() - localChart.bar_padding)
+                    .attr("x", d => localChart.x(d.key))
+                    .attr("y", d => localChart.y(d.ct))
                     .attr("fill", localChart.fill_color)
-            
-                
-        })
+            })};
+
+        tar_ds.then(update)
+        localChart.tarchart.change(event => {tar_ds.then(update)})
         
     })
 
